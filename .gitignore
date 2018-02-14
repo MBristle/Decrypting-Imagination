@@ -1,3 +1,12 @@
+#Personalized 
+
+
+Kontrollexperiment/img/*
+Kontrollexperiment/Data/*
+Kontrollexperiment/.idea/*
+
+## Python
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -99,3 +108,5 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+
