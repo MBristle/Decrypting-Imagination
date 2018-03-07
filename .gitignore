@@ -116,3 +116,5 @@ ENV/
 .mypy_cache/
 
 
+
+Kontrollexperiment/Kontrollexperiment_lastrun.py
