@@ -118,3 +118,10 @@ ENV/
 
 
 Kontrollexperiment/Kontrollexperiment_lastrun.py
+.Rproj.user
+
+Analysis/Kontrollexperiment/Controllexp.nb.html
+
+*.csv
+
+*.xlsx
