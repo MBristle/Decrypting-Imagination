@@ -1,0 +1,80 @@
+---
+title: "Controlexperient"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Read and preprocess control-data
+```{r message=FALSE, warning=FALSE, r,echo=T}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load(tidyverse)
+p_load(R.utils)
+sourceDirectory("./source/")
+data<-readControl()  %>% preproControl() 
+
+```
+
+## check accuracy
+corrResp: correct response
+rtResp: reaction time of response
+- inSet: 0 - correct rejection (true negativ)
+- inSet: 1 - Hit (true positiv)
+- session: 1-5 - time factor (not constant, therefore only ordinal)
+- kategory: Landscape, Face, Art
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p_load(dplyr)
+p_load(brms)
+options (mc.cores=parallel::detectCores ()) # Run on multiple cores
+p_load(sjPlot)
+
+
+group_by(data,kategory,session) %>% 
+  summarize(mean_corr= mean(corrResp),sd_corr=sd(corrResp),mean_RT=mean(rtResp),sd_RT=sd(rtResp))
+
+p <- ggplot(data=data, 
+             aes(x = corrResp, y =rtResp, color= inSet) )+geom_point()
+p+facet_grid(kategory  ~  session,margins = T)
+p+facet_grid(kategory ~ participant)
+
+#correct response 
+fit_corrRespSession<-lm(corrResp~session*kategory,data = data)
+summary(fit_corrRespSession)
+sjp.lm(fit = fit_corrRespSession)
+
+fit_corrRespSet<-lm(corrResp~kategory*inSet,data = data)
+summary(fit_corrRespSet)
+sjp.int(fit = fit_corrRespSet, type = "eff")
+
+fit_corrRespParticipant<-lm(corrResp~kategory*participant,data = data)
+summary(fit_corrRespParticipant)
+sjp.int(fit = fit_corrRespParticipant, type = "eff")
+
+# reaction time
+fit_rtResp<-lm(rtResp~kategory*inSet, data)
+summary(fit_rtResp)
+sjp.int(fit = fit_rtResp,type = "eff")
+
+fit_rtRespSession<-lm(rtResp~kategory*session, data)
+summary(fit_rtRespSession)
+sjp.int(fit = fit_rtRespSession,type = "eff")
+
+fit_rtRespParticipant<-lm(rtResp~kategory*participant, data)
+summary(fit_rtRespParticipant)
+sjp.int(fit = fit_rtRespParticipant,type = "eff")
+
+
+fitBrmCorrResp<-brm(corrResp~inSet*kategory+(1|session)+(1|participant)+(1|id),data = data,family = bernoulli())
+marginal_effects(fitBrmCorrResp)
+plot(fitBrmCorrResp)
+
+fitBrmRt<-brm(rtResp~inSet*kategory+(1|session)+(1|participant)+(1|id),data = data,family =exgaussian(link = "identity", link_sigma = "log", link_beta = "log"))
+marginal_effects(fitBrmRt)
+plot(fitBrmRt)
+
+
+```
+
