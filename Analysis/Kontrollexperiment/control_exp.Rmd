@@ -25,7 +25,7 @@ rtResp: reaction time of response
 - kategory: Landscape, Face, Art
 
 
-```{r echo=TRUE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=T, warning=FALSE}
 p_load(dplyr)
 p_load(brms)
 options (mc.cores=parallel::detectCores ()) # Run on multiple cores
@@ -68,10 +68,12 @@ sjp.int(fit = fit_rtRespParticipant,type = "eff")
 
 
 fitBrmCorrResp<-brm(corrResp~inSet*kategory+(1|session)+(1|participant)+(1|id),data = data,family = bernoulli())
+summary(fitBrmCorrResp)
 marginal_effects(fitBrmCorrResp)
 plot(fitBrmCorrResp)
 
 fitBrmRt<-brm(rtResp~inSet*kategory+(1|session)+(1|participant)+(1|id),data = data,family =exgaussian(link = "identity", link_sigma = "log", link_beta = "log"))
+summary(fitBrmRt)
 marginal_effects(fitBrmRt)
 plot(fitBrmRt)
 
