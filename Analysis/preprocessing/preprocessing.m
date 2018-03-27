@@ -1,6 +1,4 @@
-
-
-%construct path
+%% construct path
 
 f=struct();
 f.parts = strsplit(pwd, '/');
@@ -12,8 +10,8 @@ f.s = [f.s{:}];
 
 f.f = regexpi({f.d.name},'FixationReport\w*.xls','match');
 f.f = [f.f{:}];
-%%
-%Read data
+
+%% Read data
 data=struct();
 for i = 1:length(f.s)
    % data.s{i}= struct2table(tdfread([f.DirPart,f.s{1}],'\t'));
@@ -26,6 +24,17 @@ end
 data.f=vertcat(data.f{:});
 
 %% 
- %ToDo: Split set in to imagary and perception
+ %ToDo: Split set in to imagery and perception
+ %
  %perform RCA, ScanMatch, Multimatch
  %SetUp features 
+ 
+OUT = regexp(table2cell(data.f(:,1)), '^(?<participant>[a-zA-Z][a-zA-Z]\d\d)_(?<session>\d)$', 'names');
+data.f= [data.f,struct2table([OUT{:}])];
+
+ %split set into imagery and perception
+ data.perception = data.f(15000>data.f.CURRENT_FIX_START,:);
+ data.imagery = data.f(15000<data.f.CURRENT_FIX_START,:);
+ 
+ 
+
