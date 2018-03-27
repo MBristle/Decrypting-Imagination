@@ -40,7 +40,12 @@ p <- ggplot(data=data,
 p+facet_grid(kategory  ~  session,margins = T)
 p+facet_grid(kategory ~ participant)
 
+
 #correct response 
+fit_corrRespSessionPart<-lm(rtResp~participant*session,data = data)
+summary(fit_corrRespSessionPart)
+sjp.int(fit = fit_corrRespSessionPart, type = "eff")
+f#correct response 
 fit_corrRespSession<-lm(corrResp~session*kategory,data = data)
 summary(fit_corrRespSession)
 sjp.lm(fit = fit_corrRespSession)
