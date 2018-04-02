@@ -1,5 +1,10 @@
 #Personalized 
 
+Analysis/preprocessing/FuncSimToolbox
+Analysis/preprocessing/LIBSVM
+Analysis/preprocessing/ScanMatch
+Analysis/preprocessing/rqa.m
+
 Pilotexperiment/img/*
 Pilotexperiment/Data/*
 Pilotexperiment/.idea/*
