@@ -1,31 +1,73 @@
-load('data.m')
+%% preprocessing Fixation
+%% construct path
+clear
+addpath('FuncSimToolbox','ScanMatch','LIBSVM')
 
+f=struct();
+f.parts = strsplit(pwd, filesep);
+f.DirPart = fullfile( filesep,f.parts{1:end-2},['EyetrackingData',filesep,'mat',filesep]);
+tmp=load([f.DirPart,'FixationReportAllData.xls.mat']);
+data.raw=tmp.data;
+clear('f','tmp')
 % SAMPLE_INDEX ca.15552; samples/trail starts with 1 for each trail
 % write sample analysis (long to wide format)
 
 
-%% Split set in to imagery and perception (fixation)
- % get meta data 
-  
-OUT = regexp(table2cell(data.f{1}(:,1)),...
+
+%% get metadata about the set
+OUT = regexp(table2cell(data.raw(:,1)),...
     '^(?<participant>[a-zA-Z][a-zA-Z]\d\d)_(?<session>\d)$', 'names');
-data.f= [data.f{1},struct2table([OUT{:}])];
+data.raw= [data.raw,struct2table([OUT{:}])];
 
-%split set into imagery and perception
-data.p.f = data.f(15000>data.f.CURRENT_FIX_START,:);
-data.i.f = data.f(15000<data.f.CURRENT_FIX_START,:);
+data.md.trails=1:90;
+data.md.sessions=unique(data.raw.session);
+data.md.participants=unique(data.raw.participant);
+clear('OUT')
+%% Inspection
+% SUMMARY: all participants: o_Landschaft_13.jpg is missing in block 4
+% ug93_4: o_Landschaft_07.jpg in Block 5!
+% 
+% for p= 1:length(data.md.participants)
+%     for s= 1:5
+%         tmp=~cellfun(@isempty,regexp(table2cell(data.raw(:,1)),[data.md.participants{p},'_',num2str(s)], 'match'));
+%         unique([num2str(data.raw.block(tmp,:)),data.raw.stim_name(tmp,:)],'rows')
+%         disp(['name: ', data.md.participants(p),' session: ',s, ' max: ', max(data.raw.TRIAL_INDEX(tmp,:)),...
+%         ' unique: ', unique(data.raw.TRIAL_INDEX(tmp,:)),...
+%         ' pictures_block: ', length(unique([num2str(data.raw.block(tmp,:)),data.raw.stim_name(tmp,:)],'rows')), 'should be 90'])
+%         
+%     end
+% end
+% 
+% % data.raw(data.raw.TRIAL_INDEX==91,:)
+% tmp=data.raw(~cellfun(@isempty,regexp(table2cell(data.raw(:,1)),'ug93_4', 'match')),:);
+% %plot(tmp.TRIAL_INDEX,tmp.TRIAL_FIXATION_TOTAL) % Trail 61 is missing and Trail 62 has only 1 Fixation
+% histogram(categorical(cellstr(tmp.stim_name)))
+% unique([num2str(tmp.block),tmp.stim_name],'rows') 
 
-%get metadata about the set
-data.md.trails=unique(data.p.f.TRIAL_INDEX);
-data.md.sessions=unique(data.p.f.session);
-data.md.participants=unique(data.p.f.participant);
+%% exclude trails for balanced design in crossvalidation -> see inspection for further detail
+missing=false(height(data.raw),1);
+missing(cellfun(@isempty,regexp(table2cell(data.raw(:,24)),'[KLG][a-z]*_\d\d?', 'match')))=true;
+drop=~(cellfun(@str2double,table2cell(data.raw(:,21)))==4|... drop block 4 from all sessions and participants
+    (cellfun(@str2double,table2cell(data.raw(:,21)))==5&...block 5
+    ~cellfun(@isempty,regexp(table2cell(data.raw(:,1)),'ug93_4', 'match')))|missing); %participant 'ug93_4'
+    
+
+data.raw = data.raw(drop,:); % excludes trails
+clear('drop','missing')
 
 
-%% perform RCA, ScanMatch, Multimatch, FuncSim for each trail in each session for
- %each participant
- 
- %Assumes for all participants the same number of trails in each session
- %and the same number of sessions for each participant! (see assertation)
+%% Setup Dataset
+% ID: participant_session_block_stim_name
+
+pic=regexp(table2cell(data.raw(:,24)),'[KLG][a-z]*_\d\d?', 'match');
+datasetup = cellstr( unique([data.raw.RECORDING_SESSION_LABEL,...
+    repmat('_',height(data.raw),1),num2str(data.raw.block),...
+    repmat('_',height(data.raw),1),char([pic{:}]')],'rows'));
+datasetup = horzcat(datasetup, regexp((datasetup(:,1)),...
+    '(?<vpn>[a-z][a-z]\d\d)_(?<session>\d)_(?<block>\d)_(?<kat>[KLG][a-z]*)_(?<img>\d\d?)', 'names'));
+assert(length(datasetup)==1860) % part 5 * session 5* block 5* img 15 - 15 (from part ug93_s4_b5)= 1860
+
+%% extract features
 
 %parameters of the RQA
 param.delay = 1;
@@ -36,113 +78,95 @@ param.adjacency=[];
 param.linelength = 2;
 param.radius=64;
 
- for i_p =1:length(data.md.participants)
-    curr_p=data.md.participants(i_p);
-    assert(length(unique(data.p.f.session(strcmp(data.p.f.participant,curr_p),:)))...
-        ==length(data.md.sessions),...
-        char(strcat('Number of sessions does not match in "',curr_p,'"')))
+%setup dataset and progress doc
+dataset=cell(2*length(datasetup),1);
+f = waitbar(0,'Please wait...');
+t = tic;
 
-    for i_s= 1:length(data.md.sessions)
-        curr_s=data.md.sessions(i_s);
-        assert(0.5*(length(unique(data.p.f.TRIAL_INDEX(strcmp(data.p.f.session,curr_s)&...
-            strcmp(data.p.f.participant,curr_p))))...
-             + length(unique(data.i.f.TRIAL_INDEX(strcmp(data.i.f.session,curr_s)&...
-             strcmp(data.i.f.participant,curr_p)))))...
-             ==length(data.md.trails),...
-            char(strcat('Number of trails does not match in participant "',curr_p,...
-            '" in session "',curr_s,'"')))
+for i=1:length(datasetup)
+    for ii =1:2 %perception and imagination
+        %index for dataset
+        idx=i+length(datasetup)*(ii-1);
         
-        for i_t=1:length(data.md.trails)
-            curr_t=data.md.trails(i_t);
-            
-            
-            % RQA-analysis
+        % selection of fixation corresponding to current VPN, Session,
+        % Block, Picture and condition (perception or imagination)
+         selection= ~cellfun(@isempty,...
+             regexp(cellstr([data.raw.RECORDING_SESSION_LABEL,num2str(data.raw.block),data.raw{:,24}]),...
+                [datasetup{i,2}.vpn,'_',datasetup{i,2}.session,datasetup{i,2}.block,...
+                'o_',datasetup{i,2}.kat,'_',datasetup{i,2}.img,'.jpg'],...
+                'match'))&...
+             (ii==1&data.raw.CURRENT_FIX_START<15000)...perception$
+             |(ii==2&data.raw.CURRENT_FIX_START>15000); %imagination
+         
+         %copies struct with cpn, session, block, kat, img information to
+         %dataset
+         
+        % Sample description metadata
+        dataset{idx}=datasetup{i,2};
+        dataset{idx}.session=str2double(dataset{idx}.session);
+        dataset{idx}.block=str2double(dataset{idx}.block);
         
-            results.p.rqa{i_p,i_s,i_t} =Rqa(...
-                    [data.p.f.CURRENT_FIX_X(strcmp(data.p.f.session,curr_s)&...
-                        strcmp(data.p.f.participant,curr_p)&data.p.f.TRIAL_INDEX==curr_t),...
-                    data.p.f.CURRENT_FIX_Y(strcmp(data.p.f.session,curr_s)&...
-                        strcmp(data.p.f.participant,curr_p)&data.p.f.TRIAL_INDEX==curr_t)]...
-                ,param);
 
-            
-            results.i.rqa{i_p,i_s,i_t} =Rqa(...
-                    [data.i.f.CURRENT_FIX_X(strcmp(data.i.f.session,curr_s)&...
-                        strcmp(data.i.f.participant,curr_p)&data.i.f.TRIAL_INDEX==curr_t),...
-                    data.i.f.CURRENT_FIX_Y(strcmp(data.i.f.session,curr_s)&...
-                        strcmp(data.i.f.participant,curr_p)&data.i.f.TRIAL_INDEX==curr_t)]...
-                ,param);
-            
-            % scanMatch analysis
-                %TODO
-                results.p.sm{i_p,i_s,i_t}=nan;
-                results.i.sm{i_p,i_s,i_t}=nan;
-            
-            % multiMatch analysis
-                %TODO
-                results.p.mm{i_p,i_s,i_t}=nan;
-                results.i.mm{i_p,i_s,i_t}=nan;
-            
-            % FuncSim analysis
-                %TODO
-                results.p.fs{i_p,i_s,i_t}=nan;
-                results.i.fs{i_p,i_s,i_t}=nan;
+        
+        dataset{idx}.trailID=datasetup{i,1};
+        
+        if ii==1, dataset{idx}.condition = 'perception'; else dataset{idx}.condition='imagination'; end;
+
+        % raw data
+        dataset{idx}.xr=data.raw.CURRENT_FIX_X(selection);
+        dataset{idx}.xl=str2double(cellstr(data.raw.CURRENT_FIX_X_OTHER(selection,:)));
+        dataset{idx}.yr=data.raw.CURRENT_FIX_Y(selection);
+        dataset{idx}.yl=str2double(cellstr(data.raw.CURRENT_FIX_X_OTHER(selection,:)));
+        dataset{idx}.dur=data.raw.CURRENT_FIX_DURATION(selection);
+        dataset{idx}.pupil=data.raw.CURRENT_FIX_PUPIL(selection);
+        dataset{idx}.blink=data.raw.CURRENT_FIX_BLINK_AROUND(selection,:);
+       
                 
-            %  OTHER MEASUREMENT
-                %TODO
-                %results.p.REPLACE{i_p,i_s,i_t}=nan;
-                %results.i.REPLACE{i_p,i_s,i_t}=nan;
+        %stage 1 
+        dataset{idx}.numberOfBlink=sum(~cellfun(@isempty,regexp(cellstr(dataset{idx}.blink),'AFTER', 'match'))); %
+        dataset{idx}.numberOfFix=length(dataset{idx}.xr); % check typ
+        dataset{idx}.rating=str2double(unique(data.raw.Rating(selection))); % check for typ
+        
+        dataset{idx}.mean.xr=mean(dataset{idx}.xr);
+        dataset{idx}.mean.yr=nanmean(dataset{idx}.xl);
+        dataset{idx}.mean.xl=mean(dataset{idx}.yr);
+        dataset{idx}.mean.yl=nanmean(dataset{idx}.yl);
+        dataset{idx}.mean.dur=mean(dataset{idx}.dur);
+        dataset{idx}.mean.pupil=mean(dataset{idx}.pupil);
+        
+        dataset{idx}.std.xr=std(dataset{idx}.xr);
+        dataset{idx}.std.yr=nanstd(dataset{idx}.xl);
+        dataset{idx}.std.xl=std(dataset{idx}.yr);
+        dataset{idx}.std.yl=nanstd(dataset{idx}.yl);
+        dataset{idx}.std.dur=std(dataset{idx}.dur);
+        dataset{idx}.std.pupil=std(dataset{idx}.pupil);
+        
+        %stage 2 
+        %todo: probability map of X,Y to be fixated --> bootstrap
+        %distribution? 
+        %todo: PDF of duration 
+        %todo: PDF of pupil
 
-            
-        end
+        
+        %stage 3
+        %dataset{idx}.rqa=Rqa([dataset{idx}.xr,dataset{idx}.yr],param);    
+        %dataset{idx}.scanMatch= %implement scanmatch
+        %dataset{idx}.multiMatch= %implement multiMatch
+        
+        %stage 4
+        
+        %progress Doc
+        done=sum(~cellfun(@isempty,dataset))/length(dataset);
+        waitbar(done,f,...
+            ['in progress: ',strrep(dataset{idx}.trailID,'_',' '), '  estimated Time to finish: ', datestr(toc(t)/done*(1-done)/(24*60*60), 'DD:HH:MM:SS')]);
+
     end
- end
- %% Create Dataset for fixation
- %refactor!!! 
- 
- k=1;
- 
-  for i_p =1:length(data.md.participants)
-    curr_p=data.md.participants(i_p);
-    for i_s= 1:length(data.md.sessions)
-        curr_s=data.md.sessions(i_s);
-        for i_t=1:length(data.md.trails)
-            curr_t=data.md.trails(i_t);
-            curr_select_p=strcmp(data.p.f.session,curr_s)&...
-                strcmp(data.p.f.participant,curr_p)&data.p.f.TRIAL_INDEX==curr_t;
-            curr_select_i=strcmp(data.i.f.session,curr_s)&...
-                strcmp(data.i.f.participant,curr_p)&data.i.f.TRIAL_INDEX==curr_t;
+end
 
-           
-            
-            % Create Dataset
-            
-            dataset.all{k}= {char(curr_p),... %Participant
-                str2double(curr_s{:})==1,...%Session
-                table2array(unique(data.p.f(curr_select_p,13))),... %Block
-                unique(data.p.f.number(curr_select_p)),... % PictureID
-                unique(data.p.f.TRIAL_INDEX(curr_select_p)),... % TrailIndex
-                length(unique(data.p.f.CURRENT_FIX_INDEX(curr_select_p))),... % Total Fixation Perception
-                length(unique(data.i.f.CURRENT_FIX_INDEX(curr_select_i))),... % Total Fixation Imagination
-                table2array(unique(data.p.f(curr_select_p,14))),... % category
-                table2array(unique(data.p.f(curr_select_p,12))),... %Rating
-                num2cell(table2array(data.p.f(curr_select_p,5))'),... %Pupile - Perception
-                num2cell(table2array(data.p.f(curr_select_p,2))'),... %Duration - Perception
-                num2cell(table2array(data.p.f(curr_select_p,7))'),... %X - Perception
-                num2cell(table2array(data.p.f(curr_select_p,8))'),... %Y - Perception
-                results.p.rqa{i_p,i_s,i_t},... RQA - Perception 
-                num2cell(table2array(data.i.f(curr_select_i,5))'),... %Pupile - Imagination
-                num2cell(table2array(data.i.f(curr_select_i,2))'),... %Duration - Imagination
-                num2cell(table2array(data.i.f(curr_select_i,7))'),... %X - Imagination
-                num2cell(table2array(data.i.f(curr_select_i,8))')... %Y - Imagination
-                results.i.rqa{i_p,i_s,i_t},... RQA - Imagination
-                };
-            
-            k=k+1;
-        end
-    end
- end
-dataset.all=vertcat(dataset.all{:});
+        %todo: vpn to number
+        %todo: stimulusname to number
+        %todo: category to number
 
-
-
+waitbar(1,f,'saving File: dataset.mat');
+save('dataset.mat','dataset','-v7.3') %save to HDF5 file
+close(f)
