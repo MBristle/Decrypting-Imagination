@@ -142,6 +142,7 @@ for i=1:length(datasetup)
         dataset{idx}.std.pupil=std(dataset{idx}.pupil);
         
         %stage 2 
+        
         %todo: probability map of X,Y to be fixated --> bootstrap
         %distribution? 
         %todo: PDF of duration 
@@ -162,11 +163,19 @@ for i=1:length(datasetup)
 
     end
 end
-
-        %todo: vpn to number
-        %todo: stimulusname to number
-        %todo: category to number
-
 waitbar(1,f,'saving File: dataset.mat');
-save('dataset.mat','dataset','-v7.3') %save to HDF5 file
+%% numeric VPN, Img, Category
+ds= [dataset{:}];
+nCat= grp2idx({ds.kat}'); 
+nImg= grp2idx(horzcat(num2str(grp2idx({ds.kat}')),vertcat(ds.img)));
+nVpn= grp2idx({ds.vpn});
+
+
+for i=1:length(ds)
+    ds(i).nCat=nCat(i);
+    ds(i).nImg=nImg(i);
+    ds(i).nVpn=nVpn(i);
+end
+
+save('dataset_raw_sum.mat','ds','-v7.3') %save to HDF5 file
 close(f)

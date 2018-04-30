@@ -3,6 +3,7 @@
 Analysis/preprocessing/FuncSimToolbox
 Analysis/preprocessing/LIBSVM
 Analysis/preprocessing/ScanMatch
+Analysis/preprocessing/MultiMatch
 Analysis/preprocessing/rqa.m
 
 Pilotexperiment/img/*
