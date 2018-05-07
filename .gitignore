@@ -134,3 +134,7 @@ Analysis/Kontrollexperiment/Controllexp.nb.html
 *.xls
 Analysis/preprocessing/data.m
 *.mat
+Analysis/Modeling/.idea/workspace.xml
+Analysis/Modeling/output_11_0.png
+Analysis/Modeling/output_10_0.png
+Analysis/Modeling/notebook.tex

@@ -28,5 +28,5 @@ catch e
    
     data.s=vertcat(data.s{:}); 
     data.f=vertcat(data.f{:});
-    save('data.m','data','-v7.3')
+    save('allData.mat','data','-v7.3')
 end

@@ -95,8 +95,8 @@ for i=1:length(datasetup)
                 [datasetup{i,2}.vpn,'_',datasetup{i,2}.session,datasetup{i,2}.block,...
                 'o_',datasetup{i,2}.kat,'_',datasetup{i,2}.img,'.jpg'],...
                 'match'))&...
-             (ii==1&data.raw.CURRENT_FIX_START<15000)...perception$
-             |(ii==2&data.raw.CURRENT_FIX_START>15000); %imagination
+             ((ii==1&data.raw.CURRENT_FIX_START<15000)...perception$
+             |(ii==2&data.raw.CURRENT_FIX_START>15000)); %imagination
          
          %copies struct with cpn, session, block, kat, img information to
          %dataset
@@ -143,6 +143,7 @@ for i=1:length(datasetup)
         
         %stage 2 
         
+        
         %todo: probability map of X,Y to be fixated --> bootstrap
         %distribution? 
         %todo: PDF of duration 
@@ -177,5 +178,5 @@ for i=1:length(ds)
     ds(i).nVpn=nVpn(i);
 end
 
-save('dataset_raw_sum.mat','ds','-v7.3') %save to HDF5 file
+save('dataset_raw_sum2.mat','ds','-v7.3') %save to HDF5 file
 close(f)
