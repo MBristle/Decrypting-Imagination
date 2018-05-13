@@ -9,7 +9,7 @@ X_p,y_p,X_i,y_i,vpn_p,vpn_i = load_summary()
 _,n_classes = get_svm.binarize(y_p)
 
 
-PERMUTATIONS=2
+PERMUTATIONS=100
 RANDOM_STATE=0
 
 COMPARISON= ["IID: p->p","IID: i->i","Vpn: p->p","Vpn: i->i"]
@@ -20,7 +20,7 @@ y=[y_p,y_i,y_p,y_i]
 
 
 score=np.empty(LEN_COMP)
-permutation_scores=None
+permutation_scores=list()
 pvalue=np.empty(LEN_COMP)
 
 for i in range(LEN_COMP):
@@ -28,12 +28,8 @@ for i in range(LEN_COMP):
     score[i], permutation_scores_tmp, pvalue[i] = get_svm.permutationTesting(
         X[i], y[i],group=GROUP[i], n_permutations= PERMUTATIONS, random_state = RANDOM_STATE)
 
-    if permutation_scores is None:
-        permutation_scores = permutation_scores_tmp
-    else:
-        permutation_scores = np.append([permutation_scores], [permutation_scores_tmp], axis=0)
+    permutation_scores.append( permutation_scores_tmp)
 
-
-import numpy as np
+permutation_scores= np.asarray(permutation_scores)
 np.savez('summary_permutation',comparison=COMPARISON, score=score, permutation_scores=permutation_scores,pvalue=pvalue)
 
