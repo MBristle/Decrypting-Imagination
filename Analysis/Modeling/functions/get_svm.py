@@ -30,15 +30,12 @@ def first_view_SVM(X: float, y: int, test_train_ratio: float, random_state: int,
 def each_class_CV(X: float, y: int, test_train_ratio: float, random_state: int, X_t: float = None, y_t: int = None,n_jobs:int=4):
     "get SVM for the class specified"
 
-    from sklearn import svm, datasets
-    from sklearn.metrics import roc_curve, auc
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import label_binarize
+    from sklearn import svm
     from sklearn.multiclass import OneVsRestClassifier
-    from scipy import interp
 
     y, n_classes = binarize(y)
-    y_t = binarize(y_t)
+    if y_t is not None:
+        y_t,_ = binarize(y_t)
 
     # shuffle and split training and test sets
     X_train, X_test, y_train, y_test = get_train_test(
@@ -54,10 +51,7 @@ def each_class_CV(X: float, y: int, test_train_ratio: float, random_state: int, 
 
 def permutationTesting(X: float, y: int,group=None, cv=None,n_permutations: int = 100, random_state: int = 0,n_jobs:int=4):
     "get SVM for the class specified"
-    from sklearn import svm, datasets
-    from sklearn.metrics import confusion_matrix
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import roc_auc_score
+    from sklearn import svm
     from sklearn.model_selection import StratifiedKFold
     from sklearn.model_selection import permutation_test_score
 
@@ -85,6 +79,7 @@ def get_train_test(X: float, y: int, test_train_ratio: float, random_state: int,
 
 
 def binarize(y):
+    import numpy as np
     if y is None:
         return None
 
