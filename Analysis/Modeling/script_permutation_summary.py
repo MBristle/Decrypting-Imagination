@@ -2,6 +2,7 @@
 from functions.load_dataset import load_summary
 import functions.get_svm as get_svm
 import numpy as np
+
 ## import Data in features X and targets y
 X_p,y_p,X_i,y_i,vpn_p,vpn_i = load_summary()
 
@@ -24,7 +25,7 @@ permutation_scores=list()
 pvalue=np.empty(LEN_COMP)
 
 for i in range(LEN_COMP):
-    print("start Permutationtesting: ", COMPARISON[i] )
+    print("start permutation testing: ", COMPARISON[i] )
     score[i], permutation_scores_tmp, pvalue[i] = get_svm.permutationTesting(
         X[i], y[i],group=GROUP[i], n_permutations= PERMUTATIONS, random_state = RANDOM_STATE)
 
