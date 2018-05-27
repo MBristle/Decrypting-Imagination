@@ -32,16 +32,31 @@ def load_summary():
     return X_p, y_p, X_i, y_i, vpn_p, vpn_i
 
 
-def load_map(split = None, y_cat= 'nVpn', group_cat = 'nCat'):
+def load_map(split=15, y_cat='nCat', group_cat='nVpn', load=True):
+    import os.path as path
+    import numpy as np
+    FILENAME = 'feature_map' + '_' + group_cat + '_' + y_cat + str(split) + '.npz'
+    # import Data in features X and targets y if available
+    if load and path.isfile(FILENAME):
+        data = np.load(FILENAME)  # load_map()
+        X_p = data['X_p']
+        y_p = data['y_p']
+        X_i = data['X_i']
+        y_i = data['y_i']
+        group_p = data['group_p']
+        group_i = data['group_i']
+        return X_p, y_p, X_i, y_i, group_p, group_i
+
+    # Calculate Dataset
+
     ## %matplotlib inline
     from functools import reduce
     import scipy.io as io
-    import numpy as np
+
     import pandas as pd
     data = io.loadmat('dataset_raw_sumMAT.mat')
+
     ds = data['ds']
-    if split is None:
-        split = 5
 
     x_shape, y_shape = feature_shape(ds)
 
@@ -51,7 +66,7 @@ def load_map(split = None, y_cat= 'nVpn', group_cat = 'nCat'):
     y_out, y_bins = pd.qcut(np.asarray(y_shape), split, labels=False, retbins=True, duplicates='drop')
 
     # X -> features, y -> label
-    vpn = np.empty((ds.shape[1]))
+    group = np.empty((ds.shape[1]))
     y = np.empty((ds.shape[1]))
     y[:] = np.nan
     X = np.empty(shape=f_shape)
@@ -98,13 +113,13 @@ def load_map(split = None, y_cat= 'nVpn', group_cat = 'nCat'):
                         # blinks
                         X[i, curr_y, curr_x, 7] += int(tmp['blink'][k] is not 'NONE')
 
-                        y[i] = tmp[group_cat][0, 0].astype(int)
+                        y[i] = tmp[y_cat][0, 0].astype(int)
 
-                        vpn[i] = tmp[y_cat][0, 0].astype(int)
+                        group[i] = tmp[group_cat][0, 0].astype(int)
             i += 1
             # print(X[i,curr_y, curr_x, :])
 
-    #[('vpn', 'O'), ('session', 'O'), ('block', 'O'), ('kat', 'O'), ('img', 'O'), ('trailID', 'O'), ('condition', 'O'),
+    #[('group', 'O'), ('session', 'O'), ('block', 'O'), ('kat', 'O'), ('img', 'O'), ('trailID', 'O'), ('condition', 'O'),
      #('xr', 'O'), ('xl', 'O'), ('yr', 'O'), ('yl', 'O'), ('dur', 'O'), ('pupil', 'O'), ('blink', 'O'),
      #('numberOfBlink', 'O'), ('numberOfFix', 'O'), ('rating', 'O'), ('mean', 'O'), ('std', 'O'), ('nCat', 'O'),
      #('nImg', 'O'), ('nVpn', 'O')]
@@ -112,10 +127,10 @@ def load_map(split = None, y_cat= 'nVpn', group_cat = 'nCat'):
 
     X = np.reshape(X, (len(ds[0, :]), reduce(lambda x, y: x * y , f_shape[1:])))
 
-    X_i, X_p, vpn_i, vpn_p, y_i, y_p = split_and_rm_nan(X, y, ds, vpn)
-    np.savez('feature_map'+'_'+group_cat+'_'+y_cat+str(split), X_i=X_i, X_p=X_p, y_i=y_i, y_p=y_p, vpn_i=vpn_i, vpn_p=vpn_p)
+    X_i, X_p, group_i, group_p, y_i, y_p = split_and_rm_nan(X, y, ds, group)
+    np.savez('feature_map'+'_'+group_cat+'_'+y_cat+str(split), X_i=X_i, X_p=X_p, y_i=y_i, y_p=y_p, group_i=group_i, group_p=group_p)
 
-    return X_p, y_p, X_i, y_i, vpn_p, vpn_i
+    return X_p, y_p, X_i, y_i, group_p, group_i
 
 
 def feature_shape(ds):

@@ -6,7 +6,7 @@ from sklearn import preprocessing
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import log_loss
 from sklearn.tree import DecisionTreeClassifier
-import os.path as path
+
 import numpy as np
 # dividing X, y into train and test data
 
@@ -14,28 +14,18 @@ import functions.get_svm as get_svm
 import os
 
 Y_CAT='nImg'
-GROUP_CAT='nCat'
-SPLIT=5
+GROUP_CAT='nVpn'
+SPLIT = 20
 from functions.load_dataset import load_map
 
-LOAD = True
-FILENAME= 'feature_map'+'_'+GROUP_CAT+'_'+Y_CAT+str(SPLIT)+'.npz'
-# import Data in features X and targets y
-if LOAD and path.isfile(FILENAME):
-    data= np.load(FILENAME) #load_map()
-    X_p=data['X_p']
-    y_p=data['y_p']
-    X_i=data['X_i']
-    y_i=data['y_i']
-    vpn_p=data['vpn_p']
-    vpn_i=data['vpn_i']
-else:
-    X_p, y_p, X_i, y_i, vpn_p, vpn_i = load_map(split=SPLIT, y_cat=Y_CAT, group_cat=GROUP_CAT)
+
+X_p, y_p, X_i, y_i, vpn_p, vpn_i = load_map(split=SPLIT, y_cat=Y_CAT, group_cat=GROUP_CAT,load=1)
 
 
 #X_p, y_p, X_i, y_i, vpn_p, vpn_i
 X_train, X_test, y_train, y_test = get_svm.get_train_test(
-    X_p, y_p, test_train_ratio=0.7,random_state=None)
+    X_i, y_i, test_train_ratio=0.7,random_state=None)
+
 
 # training a linear SVM classifier
 
@@ -64,4 +54,13 @@ cm = confusion_matrix(y_test, rf_predictions)
 # model accuracy for X_test
 accuracy = clf.score(X_test, y_test)
 print('RF acc: %0.2f \n\n'%accuracy, 'CM: \n', cm)
+
+logistic = linear_model.LogisticRegression(C=1e5)
+logistic_linear= logistic.fit(X_train, y_train)
+logistic_predictions = logistic_linear.predict(X_test)
+cm = confusion_matrix(y_test, logistic_predictions)
+# model accuracy for X_test
+accuracy = logistic_linear.score(X_test, y_test)
+print('\nLinear acc: %0.2f \n\n'%accuracy, 'CM: \n', cm)
+
 
