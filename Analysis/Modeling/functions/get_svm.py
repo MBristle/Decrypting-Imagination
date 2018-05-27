@@ -3,7 +3,7 @@
 
 
 
-def first_view_SVM(X: float, y: int, test_train_ratio: float, random_state: int, X_t: float = None, y_t: int = None):
+def first_view_SVM(X: float, y: int, test_train_ratio: float=0.7, random_state: int=None, X_t: float = None, y_t: int = None):
     "Function splitting the DS, calc linear SVM, predict data, calc accuracy and confusion matrix"
 
     # importing necessary libraries
@@ -27,7 +27,8 @@ def first_view_SVM(X: float, y: int, test_train_ratio: float, random_state: int,
     return accuracy, cm
 
 
-def each_class_CV(X: float, y: int, test_train_ratio: float, random_state: int, X_t: float = None, y_t: int = None,n_jobs:int=4):
+def each_class_CV(X: float, y: int, test_train_ratio: float, random_state: int,
+                  X_t: float = None, y_t: int = None,n_jobs:int=4,fit: bool=True):
     "get SVM for the class specified"
 
     from sklearn import svm
@@ -43,8 +44,11 @@ def each_class_CV(X: float, y: int, test_train_ratio: float, random_state: int, 
 
     # Learn to predict each class against the other
     classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True,
-                                             random_state=0),n_jobs)
-    y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+                                             random_state=0), n_jobs)
+    if fit:
+        y_score = classifier.fit(X_train, y_train).decision_function(X_test)
+    else:
+        y_score = None
 
     return classifier, y_score, y_test, n_classes
 

@@ -64,8 +64,8 @@ def each_class_CV(classifier, y_score, y_test, n_classes):
     return
 
 
-def each_class_ROC(n_classes, y_test, y_score):
-    "Compute ROC curve and ROC area for each class"
+def each_class_ROC(n_classes: int, y_test: int, y_score: int) -> int:
+    "Compute ROC curve and ROC area for each class
     from sklearn.metrics import roc_curve, auc
     fpr = dict()
     tpr = dict()
