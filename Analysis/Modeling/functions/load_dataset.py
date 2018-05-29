@@ -32,7 +32,7 @@ def load_summary():
     return X_p, y_p, X_i, y_i, vpn_p, vpn_i
 
 
-def load_map(split=15, y_cat='nCat', group_cat='nVpn', load=True):
+def load_map(split=6, y_cat='nCat', group_cat='nVpn', load=True):
     import os.path as path
     import numpy as np
     FILENAME = 'feature_map' + '_' + group_cat + '_' + y_cat + str(split) + '.npz'
@@ -78,6 +78,7 @@ def load_map(split=15, y_cat='nCat', group_cat='nVpn', load=True):
             i += 1
         else:
             # print('sample: ', i)
+
             for k in range(tmp['xr'].size):
                 for eye in ('r', 'l'):  # left right eye
                     if not np.isnan(tmp['x' + eye][k]):
