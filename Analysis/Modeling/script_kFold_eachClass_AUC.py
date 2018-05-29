@@ -16,10 +16,11 @@ Xm_p, ym_p, Xm_i, ym_i, group_m_p, group_m_i = ld.load_map()
 
 TEST_TRAIN_RATIO = 0.7
 n_jobs = multiprocessing.cpu_count()
-print(f'cpu cores: {n_jobs:d}')
+#print(f'cpu cores: {n_jobs:d}')
 rnd.seed = 0
 RANDOM_STATE = rnd.randint(0, 2 ** 32 - 1)
-print(f'Random state: {RANDOM_STATE:d}')
+#print(f'Random state: {RANDOM_STATE:d}')
+
 COMPARISON = ["S_IID: p->p", "S_IID: i->i", "S_IID: p->i", "S_IID: i->p",
               "S_Vpn: p->p", "S_Vpn: i->i", "S_Vpn: p->i", "S_Vpn: i->p",
               "F_IID: p->p", "F_IID: i->i", "F_IID: p->i", "F_IID: i->p",
@@ -62,7 +63,7 @@ mean_fpr_all = list()
 # Learn to predict each class against the other
 classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True,
                                          random_state=RANDOM_STATE))
-for i in range(LEN_COMP):  #LEN_COMP
+for i in range(int(LEN_COMP/2),LEN_COMP):  #LEN_COMP
     print("start CV testing: ", COMPARISON[i])
 
     y_train_b, d = get_svm.binarize(y_train[i % Xlen])
