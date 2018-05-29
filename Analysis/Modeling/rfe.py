@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.feature_selection import RFECV
 from sklearn.datasets import make_classification
-from sklearn.model_selection import  StratifiedKFold
+from sklearn.model_selection import  StratifiedKFold,LeaveOneGroupOut
 from functions.load_dataset import load_map
 from functions.load_dataset import load_summary
 import sklearn.metrics as mt
@@ -11,18 +11,15 @@ import sklearn.metrics as mt
 X_p, y_p, X_i, y_i, vpn_p, vpn_i = load_map()
 
 # Create the RFE object and compute a cross-validated score.
-svc = SVC(C=1, class_weight=None, dual=False, fit_intercept=True,
-     intercept_scaling=1, loss='squared_hinge', max_iter=10000,
-     multi_class='ovr', penalty='l2', random_state=None, tol=0.00001,
-     verbose=0)
+svc = SVC(kernel="linear")
 # The "accuracy" scoring is proportional to the number of correct
 # classifications
 rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(n_splits=4),
-               n_jobs=1)
-rfecv.fit(X_p, y_p)
+               n_jobs=-1)
+rfecv.fit(X_i, y_i)
 
 print("Optimal number of features : %d" % rfecv.n_features_)
-
+print('print plot')
 # Plot number of features VS. cross-validation scores
 plt.figure()
 plt.xlabel("Number of features selected")
