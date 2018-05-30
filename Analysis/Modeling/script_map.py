@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import log_loss
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut
+from sklearn import preprocessing
 import pandas as pd
 import numpy as np
 # dividing X, y into train and test data
@@ -49,9 +50,9 @@ for k in DS_SPLIT:
     for i in range(LEN_COMP):
         ii=1
         for train, test in skf_cv.split(X=X_train[i % Xlen], y=y_train[i % Xlen],groups=vpn_p):
-
-            c_X_train = X_train[i % Xlen][train]
-            c_X_test = X_test[i % Xlen][test]
+            scaler = preprocessing.MinMaxScaler().fit(X_train[i % Xlen][train])
+            c_X_test = scaler.transform(X_test[i % Xlen][test])
+            c_X_train = scaler.transform(X_train[i % Xlen][train])
             c_y_train = y_train[i % Xlen][train]
             c_y_test = y_test[i % Xlen][test]
 
