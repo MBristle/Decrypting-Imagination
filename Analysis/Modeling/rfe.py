@@ -8,7 +8,7 @@ from sklearn import preprocessing
 from functions.load_dataset import load_summary
 import sklearn.metrics as mt
 import numpy as np
-
+from functions.stats import bootstrap
 # import Data in features X and targets y
 X_p, y_p, X_i, y_i, vpn_p, vpn_i = load_map()
 X = X_i
@@ -45,6 +45,7 @@ else:
     a = rfecv.ranking_.reshape(7, 7, 8)
     for i in range(8):
         b = a[:6, :6, i]==1
+        bootstrap
         plt.imshow(b)
     for i in range(3):
         b = np.mean(a[:6, :6, :], axis=i)

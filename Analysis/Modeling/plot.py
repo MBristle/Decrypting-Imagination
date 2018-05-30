@@ -1,7 +1,7 @@
 import numpy as np
 ## %matplotlib inline
 import functions.plot as plot
-
+from functions.stats import bootstrap
 data = np.load('UbelixData/data/each_class_s_r7320712from0to16.npz')
 print(data.files)
 
@@ -14,13 +14,18 @@ classes = [['Face', 'Art', 'Landscape'],
            ['sandybrown', 'lightskyblue', 'mediumseagreen']]
 
 for k in range(int(num_plot/3)):
+    print('Iteration: ', k)
+    bootstrap(data['aucs_all'][k * 3:k * 3 + 3].ravel())
+
+for k in range(int(num_plot/3)):
     for i in range(3):
         plt = plot.each_class(data['tprs_all'][k*3+i],
                               data['mean_fpr_all'][k*3+i],
                               data['aucs_all'][k*3+i],
                               str(k),
                               classes, i)
-
+    print('Iteration: ', k )
+    bootstrap(data['aucs_all'][k*3:k*3+3].ravel())
     plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
              label='Chance', alpha=.8)
     plt.show()
