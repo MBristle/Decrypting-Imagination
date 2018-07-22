@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(readxl)
+classificationbyimg <- read_excel("~/GitHub/Forschungsatelier/Analysis/Modeling/classificationbyimg.xlsx", sheet = "classificationbyimg")
+
+
+library(tidyverse)
+tb<-gather(classificationbyimg,key = "Subject",value = "AUC", starts_with("VP")  ,factor_key = T)
+
+```
+
+```{r}
+ options(mc.cores = parallel::detectCores())
+options(digits=3)
+library(brms)
+fit<-brm(AUC~Category*Data*TrainTest+ (1|Subject)+(1|Img),data = filter(tb,Assumption=='VPN')) 
+
+#Group level validation
+fit_1a<-update(fit,. ~ . -(1|Subject))
+fit_1b<-update(fit,. ~ . -(1|Img))
+loo(fit,fit_1a)
+loo(fit,fit_1b)
+
+#Population level validation
+fit_2a<-update(fit,. ~ . -Category:Data:TrainTest)
+fit_2b<-update(fit,. ~ . -Category:Data:TrainTest -Category:Data)
+fit_2c<-update(fit,. ~ .-Category:Data:TrainTest -Category:TrainTest)
+fit_2d<-update(fit,. ~ .-Category:Data:TrainTest -Data:TrainTest)
+
+loo(fit,fit_2a)
+loo(fit_2a,fit_2b)
+loo(fit_2a,fit_2c)
+loo(fit_2a,fit_2d)
+
+bestfit<-brm(AUC~Category*Data*TrainTest-Category:Data:TrainTest + (1|Subject)+(1|Img),data = filter(tb,Assumption=='VPN')) 
+launch_shinystan(bestfit)  
+plot<-marginal_effects(bestfit) 
+plot
+bayes_R2(bestfit)
+summary(bestfit)
+
+h1<-hypothesis(bestfit,"CategoryFace>CategoryLandscape")
+hypothesis(bestfit,"CategoryLandscape>0")
+library(lsmeans)
+lsmeans(bestfit Subject)
+```
+
