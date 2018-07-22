@@ -13,31 +13,35 @@ from sklearn import preprocessing
 import sys
 
 
-print(sys.argv)
-if len(sys.argv)>1:
-        starting = int(sys.argv[1])
-        ending = starting + 1 if len(sys.argv)<3 else int(sys.argv[2])
-else:
-        raise IOError('not existing argument')
+
 
 
 # import Data in features X and targets y
-Xs_p, ys_p, Xs_i, ys_i, group_s_p, group_s_i = ld.load_summary()
-Xm_p, ym_p, Xm_i, ym_i, group_m_p, group_m_i = ld.load_map(split=6)
+Xs_p, ys_p, Xs_i, ys_i, group_s_p, group_s_i = ld.load_summary(y_cat='nImg')
+Xm_p, ym_p, Xm_i, ym_i, group_m_p, group_m_i = ld.load_map(split=6,y_cat='nImg',load=False)
 
 TEST_TRAIN_RATIO = 0.7
 n_jobs = multiprocessing.cpu_count()
 #print(f'cpu cores: {n_jobs:d}')
 rnd.seed = 0
-RANDOM_STATE = 7320712#rnd.randint(0, 2 ** 32 - 1)
+RANDOM_STATE = 7320713#rnd.randint(0, 2 ** 32 - 1)
 #print(f'Random state: {RANDOM_STATE:d}')
-out= ('each_class_s_r'+str(RANDOM_STATE)+'from'+str(starting)+'to'+str(ending))
-print(out)
+
+
 COMPARISON = ["S_IID: p->p", "S_IID: i->i", "S_IID: p->i", "S_IID: i->p",
               "S_Vpn: p->p", "S_Vpn: i->i", "S_Vpn: p->i", "S_Vpn: i->p",
               "F_IID: p->p", "F_IID: i->i", "F_IID: p->i", "F_IID: i->p",
               "F_Vpn: p->p", "F_Vpn: i->i", "F_Vpn: p->i", "F_Vpn: i->p"
               ]
+print(sys.argv)
+if len(sys.argv)>1:
+    starting = int(sys.argv[1])
+    ending = starting + 1 if len(sys.argv)<3 else int(sys.argv[2])
+else:
+    starting = 0
+    ending = len(COMPARISON)
+out= ('each_class_s_r'+str(RANDOM_STATE)+'from'+str(starting)+'to'+str(ending))
+print(out)
 LEN_COMP = len(COMPARISON)
 GROUP = [None, None, None, None,
          group_s_p, group_s_i, group_s_p, group_s_i,

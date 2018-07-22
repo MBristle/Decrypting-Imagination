@@ -26,7 +26,7 @@ rtResp: reaction time of response
 
 
 ```{r echo=TRUE, message=T, warning=FALSE}
-p_load(dplyr)
+p_load(dplyr) 
 p_load(brms)
 options (mc.cores=parallel::detectCores ()) # Run on multiple cores
 p_load(sjPlot)
@@ -71,7 +71,7 @@ fit_rtRespParticipant<-lm(rtResp~kategory*participant, data)
 summary(fit_rtRespParticipant)
 sjp.int(fit = fit_rtRespParticipant,type = "eff")
 
-if(T){
+if(F){
 
 fitBrmCorrResp<-brm(corrResp~inSet*kategory+(1|session)+(1|participant)+(1|id),data = data,family = bernoulli())
 summary(fitBrmCorrResp)

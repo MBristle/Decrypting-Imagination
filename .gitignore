@@ -13,6 +13,8 @@ Kontrollexperiment/img/*
 Kontrollexperiment/Data/*
 Kontrollexperiment/.idea/*
 
+Analysis/Modeling/.idea/*
+Analysis/Modeling/UbelixData/*
 Presentation/ppt/*
 
 ~$*
@@ -141,3 +143,5 @@ Analysis/Modeling/notebook.tex
 *.npz
 Analysis/Modeling/output_9_0.png
 *.png
+Analysis/Modeling/.idea/workspace.xml
+Analysis/Modeling/.idea/workspace.xml

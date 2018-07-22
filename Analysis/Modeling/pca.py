@@ -5,7 +5,7 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import StratifiedKFold, LeaveOneGroupOut
 import random as rnd
 import functions.get_svm as get_svm
-from functions.load_dataset import load_map
+from functions.load_dataset import load_map,load_summary
 from sklearn import svm
 from sklearn.multiclass import OneVsRestClassifier
 import multiprocessing
