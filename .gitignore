@@ -4,6 +4,7 @@ Analysis/preprocessing/FuncSimToolbox
 Analysis/preprocessing/LIBSVM
 Analysis/preprocessing/ScanMatch
 Analysis/preprocessing/MultiMatch
+Analysis/preprocessing/Trash
 Analysis/preprocessing/rqa.m
 
 Pilotexperiment/img/*
@@ -15,6 +16,7 @@ Kontrollexperiment/.idea/*
 
 Analysis/Modeling/.idea/*
 Analysis/Modeling/UbelixData/*
+Analysis/Modeling/trash/*
 Presentation/ppt/*
 
 ~$*
